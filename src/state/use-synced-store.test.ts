@@ -1,29 +1,17 @@
 /** @vitest-environment jsdom */
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { useSyncedStore } from './use-synced-store.ts'
-import { jsonValue, schema, stringValue } from './state-serializer.ts'
+import { jsonValue, maybeStringValue, schema, stringValue } from './state-serializer.ts'
 import { z } from 'zod'
 
 describe('useSyncedStore', () => {
 
-  const realConsoleError = console.error
-
-  beforeAll(() => {
-    console.error = () => {
-      /* ignore logs */
-    }
-  })
-
-  afterAll(() => {
-    console.error = realConsoleError
-  })
-
   it('retrieves stored value for a key', () => {
     const store = fakeStore(['key', 'abc'])
     const { value } = renderHook(
-      () => useSyncedStore('key', stringValue, store)
+      () => useSyncedStore('key', stringValue(), store)
     ).result.current
     expect(value).toBe('abc')
   })
@@ -112,7 +100,7 @@ describe('useSyncedStore', () => {
   it('can clear a value for a key', () => {
     const store = fakeStore(['key', '{ "number": 1 }'])
 
-    const { clearValue } = renderHook(() => useSyncedStore('key', stringValue, store)).result.current
+    const { clearValue } = renderHook(() => useSyncedStore('key', maybeStringValue, store)).result.current
     act(() => clearValue())
 
     expect(store.getItem('key')).toBeNull()
@@ -122,10 +110,10 @@ describe('useSyncedStore', () => {
     const store = fakeStore(['key', 'value'])
 
     const renderedHook1 = renderHook(
-      () => useSyncedStore('key', stringValue, store)
+      () => useSyncedStore('key', maybeStringValue, store)
     )
     const renderedHook2 = renderHook(
-      () => useSyncedStore('key', stringValue, store)
+      () => useSyncedStore('key', maybeStringValue, store)
     )
     act(() => renderedHook1.result.current.clearValue())
 
@@ -134,13 +122,13 @@ describe('useSyncedStore', () => {
 
   it('is undefined when store is empty', () => {
     const store = fakeStore()
-    const { value } = renderHook(() => useSyncedStore('key', stringValue, store)).result.current
+    const { value } = renderHook(() => useSyncedStore('key', maybeStringValue, store)).result.current
     expect(value).toBeUndefined()
   })
 
   it('is undefined when store has no such key', () => {
     const store = fakeStore(['other-key', ''])
-    const { value } = renderHook(() => useSyncedStore('key', stringValue, store)).result.current
+    const { value } = renderHook(() => useSyncedStore('key', maybeStringValue, store)).result.current
     expect(value).toBeUndefined()
   })
 
