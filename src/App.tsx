@@ -1,11 +1,6 @@
 import './App.css'
 
-function App() {
-  return (
-    <>
-      <h1>React+TS Goodies</h1>
-    </>
-  )
-}
-
-export default App
+export const App = () =>
+  <>
+    <h1>React+TS Goodies</h1>
+  </>

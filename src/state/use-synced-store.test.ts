@@ -1,16 +1,29 @@
 /** @vitest-environment jsdom */
 
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { jsonValue, schema, stringValue, useStoredValue } from './use-stored-value.ts'
+import { useSyncedStore } from './use-synced-store.ts'
+import { jsonValue, schema, stringValue } from './state-serializer.ts'
 import { z } from 'zod'
 
-describe('useStoredValue', () => {
+describe('useSyncedStore', () => {
+
+  const realConsoleError = console.error
+
+  beforeAll(() => {
+    console.error = () => {
+      /* ignore logs */
+    }
+  })
+
+  afterAll(() => {
+    console.error = realConsoleError
+  })
 
   it('retrieves stored value for a key', () => {
     const store = fakeStore(['key', 'abc'])
     const { value } = renderHook(
-      () => useStoredValue('key', stringValue, store)
+      () => useSyncedStore('key', stringValue, store)
     ).result.current
     expect(value).toBe('abc')
   })
@@ -18,7 +31,7 @@ describe('useStoredValue', () => {
   it('parses stored json value with given schema', () => {
     const store = fakeStore(['key', '{ "number": 1 }'])
     const { value } = renderHook(
-      () => useStoredValue('key', schema(z.object({ number: z.number() })), store)
+      () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     ).result.current
     expect(value).toEqual({ number: 1 })
   })
@@ -27,7 +40,7 @@ describe('useStoredValue', () => {
     const store = fakeStore()
 
     const { saveValue } = renderHook(
-      () => useStoredValue('key', schema(z.object({ number: z.number() })), store)
+      () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     ).result.current
     await act(() => saveValue({ number: 17 }))
 
@@ -38,7 +51,7 @@ describe('useStoredValue', () => {
     const store = fakeStore(['key', '{ "number": 1 }'])
 
     const { saveValue } = renderHook(
-      () => useStoredValue('key', schema(z.object({ number: z.number() })), store)
+      () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     ).result.current
     await act(() => saveValue({ number: 17 }))
 
@@ -49,7 +62,7 @@ describe('useStoredValue', () => {
     const store = fakeStore()
 
     const { value, saveValue } = renderHook(
-      () => useStoredValue('key', schema(z.object({ number: z.number() })), store)
+      () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     ).result.current
     // value is undefined because store is empty
     const savedValue = await act(() => value ?? saveValue({ number: 17 }))
@@ -61,7 +74,7 @@ describe('useStoredValue', () => {
     const store = fakeStore()
 
     const render = renderHook(
-      () => useStoredValue('key', schema(z.object({ number: z.number() })), store)
+      () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     )
     await act(() => render.result.current.saveValue({ number: 17 }))
 
@@ -72,12 +85,12 @@ describe('useStoredValue', () => {
     const store = fakeStore()
 
     const { saveValue } = renderHook(
-      () => useStoredValue('key', schema(z.object({ number: z.number() })), store)
+      () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     ).result.current
     await act(() => saveValue({ number: 17 }))
 
     const { value } = renderHook(
-      () => useStoredValue('key', schema(z.object({ number: z.number() })), store)
+      () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     ).result.current
     expect(value).toEqual({ number: 17 })
   })
@@ -86,10 +99,10 @@ describe('useStoredValue', () => {
     const store = fakeStore()
 
     const renderedHook1 = renderHook(
-      () => useStoredValue('key', schema(z.object({ number: z.number() })), store)
+      () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     )
     const renderedHook2 = renderHook(
-      () => useStoredValue('key', schema(z.object({ number: z.number() })), store)
+      () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     )
     await act(() => renderedHook1.result.current.saveValue({ number: 17 }))
 
@@ -99,7 +112,7 @@ describe('useStoredValue', () => {
   it('can clear a value for a key', () => {
     const store = fakeStore(['key', '{ "number": 1 }'])
 
-    const { clearValue } = renderHook(() => useStoredValue('key', stringValue, store)).result.current
+    const { clearValue } = renderHook(() => useSyncedStore('key', stringValue, store)).result.current
     act(() => clearValue())
 
     expect(store.getItem('key')).toBeNull()
@@ -109,10 +122,10 @@ describe('useStoredValue', () => {
     const store = fakeStore(['key', 'value'])
 
     const renderedHook1 = renderHook(
-      () => useStoredValue('key', stringValue, store)
+      () => useSyncedStore('key', stringValue, store)
     )
     const renderedHook2 = renderHook(
-      () => useStoredValue('key', stringValue, store)
+      () => useSyncedStore('key', stringValue, store)
     )
     act(() => renderedHook1.result.current.clearValue())
 
@@ -121,30 +134,30 @@ describe('useStoredValue', () => {
 
   it('is undefined when store is empty', () => {
     const store = fakeStore()
-    const { value } = renderHook(() => useStoredValue('key', stringValue, store)).result.current
+    const { value } = renderHook(() => useSyncedStore('key', stringValue, store)).result.current
     expect(value).toBeUndefined()
   })
 
   it('is undefined when store has no such key', () => {
     const store = fakeStore(['other-key', ''])
-    const { value } = renderHook(() => useStoredValue('key', stringValue, store)).result.current
+    const { value } = renderHook(() => useSyncedStore('key', stringValue, store)).result.current
     expect(value).toBeUndefined()
   })
 
   it('is undefined when stored value is not json parsable for schema', () => {
     const store = fakeStore(['key', '{'])
-    const { value } = renderHook(() => useStoredValue('key', jsonValue, store)).result.current
+    const { value } = renderHook(() => useSyncedStore('key', jsonValue, store)).result.current
     expect(value).toBeUndefined()
   })
 
   it('is undefined when stored value is not according to schema', () => {
     const store = fakeStore(['key', '{ "number": 1 }'])
-    const { value } = renderHook(() => useStoredValue('key', schema(z.string()), store)).result.current
+    const { value } = renderHook(() => useSyncedStore('key', schema(z.string()), store)).result.current
     expect(value).toBeUndefined()
   })
 })
 
-const maybeJsonParse = (v: string | null) => jsonValue.onRead('', v)
+const maybeJsonParse = (v: string | null) => jsonValue.parse('', v)
 
 const fakeStore = (...entries: readonly [string, string][]) => {
   const store = new Map<string, string>(entries)
