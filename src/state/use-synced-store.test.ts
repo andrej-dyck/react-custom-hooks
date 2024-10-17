@@ -24,58 +24,46 @@ describe('useSyncedStore', () => {
     expect(value).toEqual({ number: 1 })
   })
 
-  it('saves a value under a key', async () => {
+  it('saves a value under a key', () => {
     const store = fakeStore()
 
     const { saveValue } = renderHook(
       () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     ).result.current
-    await act(() => saveValue({ number: 17 }))
+    act(() => saveValue({ number: 17 }))
 
     expect(maybeJsonParse(store.getItem('key'))).toEqual({ number: 17 })
   })
 
-  it('overrides a stored value under the same key', async () => {
+  it('overrides a stored value under the same key', () => {
     const store = fakeStore(['key', '{ "number": 1 }'])
 
     const { saveValue } = renderHook(
       () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     ).result.current
-    await act(() => saveValue({ number: 17 }))
+    act(() => saveValue({ number: 17 }))
 
     expect(maybeJsonParse(store.getItem('key'))).toEqual({ number: 17 })
   })
 
-  it('returns the value on save', async () => {
-    const store = fakeStore()
-
-    const { value, saveValue } = renderHook(
-      () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
-    ).result.current
-    // value is undefined because store is empty
-    const savedValue = await act(() => value ?? saveValue({ number: 17 }))
-
-    expect(savedValue).toEqual({ number: 17 })
-  })
-
-  it('updates the value on save', async () => {
+  it('updates the value on save', () => {
     const store = fakeStore()
 
     const render = renderHook(
       () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     )
-    await act(() => render.result.current.saveValue({ number: 17 }))
+    act(() => render.result.current.saveValue({ number: 17 }))
 
     expect(render.result.current.value).toEqual({ number: 17 })
   })
 
-  it('saves a value under a key which can be retrieved from a second hook', async () => {
+  it('saves a value under a key which can be retrieved from a second hook', () => {
     const store = fakeStore()
 
     const { saveValue } = renderHook(
       () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     ).result.current
-    await act(() => saveValue({ number: 17 }))
+    act(() => saveValue({ number: 17 }))
 
     const { value } = renderHook(
       () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
@@ -83,7 +71,7 @@ describe('useSyncedStore', () => {
     expect(value).toEqual({ number: 17 })
   })
 
-  it('save value in one hook is visible to second hook', async () => {
+  it('save value in one hook is visible to second hook', () => {
     const store = fakeStore()
 
     const renderedHook1 = renderHook(
@@ -92,7 +80,7 @@ describe('useSyncedStore', () => {
     const renderedHook2 = renderHook(
       () => useSyncedStore('key', schema(z.object({ number: z.number() })), store)
     )
-    await act(() => renderedHook1.result.current.saveValue({ number: 17 }))
+    act(() => renderedHook1.result.current.saveValue({ number: 17 }))
 
     expect(renderedHook2.result.current.value).toEqual({ number: 17 })
   })

@@ -5,7 +5,9 @@ import { z } from 'zod'
 describe('state serializers', () => {
 
   test('string values deserialization', () => {
+    expect(stringValue('hello').parse('', null)).toEqual('hello')
     expect(stringValue('hello').parse('', undefined)).toEqual('hello')
+    expect(stringValue('hello').parse('', '')).toEqual('')
   })
 
   test('int values serialization', () => {
@@ -16,10 +18,17 @@ describe('state serializers', () => {
   })
 
   test('int values deserialization', () => {
+    expect(maybeIntValue.parse('', undefined)).toBeUndefined()
+    expect(maybeIntValue.parse('', null)).toBeUndefined()
     expect(maybeIntValue.parse('', '1')).toEqual(1)
     expect(maybeIntValue.parse('', '1.2')).toBeUndefined()
+
+    expect(intValue().parse('', undefined)).toEqual(0)
+    expect(intValue().parse('', null)).toEqual(0)
     expect(intValue().parse('', '1')).toEqual(1)
     expect(intValue(1).parse('', '1.2')).toEqual(1)
+    expect(intValue(1).parse('', undefined)).toEqual(1)
+    expect(intValue(1).parse('', null)).toEqual(1)
   })
 
   test('json values serialization', () => {
@@ -31,16 +40,26 @@ describe('state serializers', () => {
   })
 
   test('json values deserialization', () => {
+    expect(jsonValue.parse('', undefined)).toBeUndefined()
+    expect(jsonValue.parse('', null)).toBeUndefined()
+
     expect(jsonValue.parse('', '1')).toEqual(1)
     expect(jsonValue.parse('', 'true')).toEqual(true)
     expect(jsonValue.parse('', '"abc"')).toEqual('abc')
     expect(jsonValue.parse('', '[1,2,3]')).toEqual([1, 2, 3])
     expect(jsonValue.parse('', '{"id":"1a"}')).toEqual({ id: '1a' })
+
     expect(jsonValue.parse('', '1a')).toBeUndefined()
     expect(jsonValue.parse('', '{id:2b}')).toBeUndefined()
   })
 
   test('with schema deserialization', () => {
+    expect(schema(z.number().int()).parse('', undefined)).toBeUndefined()
+    expect(schema(z.number().int()).parse('', null)).toBeUndefined()
+    expect(schema(z.number().int(), 1).parse('', undefined)).toBe(1)
+    expect(schema(z.number().int(), 1).parse('', null)).toBe(1)
+
+    expect(schema(z.number().int()).parse('', '1')).toBe(1)
     expect(schema(z.number().int()).parse('', '1')).toBe(1)
     expect(schema(z.number().int()).parse('', '"1"')).toBeUndefined()
     expect(schema(z.number().int(), 1).parse('', '"1"')).toBe(1)

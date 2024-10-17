@@ -18,6 +18,8 @@ export const stringValue = (defaultValue = ''): StateSerializer<string> => ({
 export const maybeIntValue: StateSerializer<number | undefined> = {
   serialize: (value) => Number.isSafeInteger(value) ? String(value) : '',
   parse: (_, value) => {
+    if (value == null) return undefined
+
     const n = Number(value)
     return Number.isSafeInteger(n) ? n : undefined
   },
